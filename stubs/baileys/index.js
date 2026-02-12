@@ -1,0 +1,12 @@
+export const makeWASocket = () => ({ ev: { on: () => {} } });
+export const useMultiFileAuthState = async () => ({ state: {}, saveCreds: () => {} });
+export const fetchLatestBaileysVersion = async () => ({ version: [0, 0, 0] });
+export const makeCacheableSignalKeyStore = () => ({});
+export const DisconnectReason = {};
+export const proto = { IMessage: {} };
+export const extractMessageContent = () => ({});
+export const getContentType = () => "";
+export const normalizeMessageContent = () => ({});
+export const downloadMediaMessage = async () => Buffer.from("");
+export const isJidGroup = () => false;
+export default {};
