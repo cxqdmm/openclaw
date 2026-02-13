@@ -87,18 +87,15 @@ esac
 
 BASE_NAME="openclaw-offline-${VERSION}-${OS}-${ARCH}"
 mkdir -p "$OUT_DIR"
-STAGE_DIR="$OUT_DIR/$BASE_NAME"
+STAGE_ROOT="$ROOT_DIR/.offline-stage"
+STAGE_DIR="$STAGE_ROOT/$BASE_NAME"
 rm -rf "$STAGE_DIR"
 mkdir -p "$STAGE_DIR"
 
 copy_path() {
   local src="$1"
   local dest="$2"
-  if command -v rsync >/dev/null 2>&1; then
-    rsync -a "$src" "$dest"
-  else
-    cp -R -p "$src" "$dest"
-  fi
+  cp -R -p "$src" "$dest" 2>/dev/null || cp -R "$src" "$dest"
 }
 
 for path in dist openclaw.mjs package.json README.md LICENSE assets docs extensions skills; do
@@ -129,11 +126,15 @@ winpath() {
     cygpath -w "$p"
     return 0
   fi
-  python - "$p" <<'PY'
-import os, sys
-p=sys.argv[1]
-print(os.path.abspath(p))
-PY
+  if [[ "$p" =~ ^/([a-zA-Z])/(.*)$ ]]; then
+    local drive="${BASH_REMATCH[1]}"
+    local rest="${BASH_REMATCH[2]}"
+    drive="$(printf '%s' "$drive" | tr '[:lower:]' '[:upper:]')"
+    rest="${rest//\//\\}"
+    printf '%s:\\%s\n' "$drive" "$rest"
+    return 0
+  fi
+  printf '%s\n' "${p//\//\\}"
 }
 
 ARCHIVE_PATH="$OUT_DIR/${BASE_NAME}.zip"
