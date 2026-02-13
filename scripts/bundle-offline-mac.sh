@@ -103,14 +103,14 @@ for path in dist openclaw.mjs package.json README.md LICENSE assets docs extensi
   fi
 done
 
-if [[ -f "scripts/install-offline.sh" ]]; then
+if [[ -f "scripts/install-offline-mac.sh" ]]; then
   mkdir -p "$STAGE_DIR"
-  cp -p "scripts/install-offline.sh" "$STAGE_DIR/install.sh"
+  cp -p "scripts/install-offline-mac.sh" "$STAGE_DIR/install.sh"
   chmod +x "$STAGE_DIR/install.sh" || true
 fi
 
-if [[ -f "scripts/install-offline.command" ]]; then
-  cp -p "scripts/install-offline.command" "$STAGE_DIR/Install OpenClaw.command"
+if [[ -f "scripts/install-offline-mac.command" ]]; then
+  cp -p "scripts/install-offline-mac.command" "$STAGE_DIR/Install OpenClaw.command"
   chmod +x "$STAGE_DIR/Install OpenClaw.command" || true
 fi
 
