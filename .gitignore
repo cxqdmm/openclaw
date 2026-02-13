@@ -38,7 +38,6 @@ Core/
 apps/ios/*.xcodeproj/
 apps/ios/*.xcworkspace/
 apps/ios/.swiftpm/
-vendor/
 apps/ios/Clawdbot.xcodeproj/
 apps/ios/Clawdbot.xcodeproj/**
 apps/macos/.build/**
@@ -80,4 +79,3 @@ USER.md
 /memory/
 .agent/*.json
 !.agent/workflows/
-local/
