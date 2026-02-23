@@ -42,6 +42,12 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
+# Normalize OUT_DIR to an absolute POSIX path (Git Bash/MSYS)
+case "$OUT_DIR" in
+  /*) ;; # already absolute
+  *) OUT_DIR="$ROOT_DIR/$OUT_DIR" ;;
+esac
+
 OS_RAW="$(uname -s)"
 case "$OS_RAW" in
   MINGW*|MSYS*|CYGWIN*) OS="win32" ;;
@@ -98,14 +104,32 @@ copy_path() {
   cp -R -p "$src" "$dest" 2>/dev/null || cp -R "$src" "$dest"
 }
 
-for path in dist openclaw.mjs package.json README.md LICENSE assets docs extensions skills; do
+copy_extensions_filtered() {
+  local src_dir="$1"
+  local dest_dir="$2"
+  mkdir -p "$dest_dir"
+  (cd "$src_dir" && tar --posix -cf - \
+    --exclude='**/node_modules' \
+    --exclude='**/.git' \
+    --exclude='**/.pnpm-store' \
+    --exclude='**/pnpm-lock.yaml' \
+    --exclude='**/package-lock.json' \
+    --exclude='**/yarn.lock' \
+    .) | (cd "$dest_dir" && tar -xf -)
+}
+
+for path in dist openclaw.mjs package.json README.md LICENSE assets stubs docs skills; do
   if [[ -e "$path" ]]; then
     copy_path "$path" "$STAGE_DIR/"
   fi
 done
 
+if [[ -d "extensions" ]]; then
+  copy_extensions_filtered "extensions" "$STAGE_DIR/extensions"
+fi
+
 if [[ -f "scripts/install-offline-win.ps1" ]]; then
-  cp -p "scripts/install-offline-win.ps1" "$STAGE_DIR/install.ps1"
+  cp -p "scripts/install-offline-win.ps1" "$STAGE_DIR/install-offline-win.ps1"
 fi
 if [[ -f "scripts/install-offline-win.cmd" ]]; then
   cp -p "scripts/install-offline-win.cmd" "$STAGE_DIR/Install OpenClaw.cmd"
@@ -117,7 +141,8 @@ fi
   export npm_config_update_notifier=false
   export npm_config_fund=false
   export npm_config_audit=false
-  npm install --omit=dev
+  node -e 'const fs=require("node:fs");const p=JSON.parse(fs.readFileSync("package.json","utf8"));if(p.devDependencies){delete p.devDependencies;fs.writeFileSync("package.json",JSON.stringify(p,null,2));}'
+  npm install --omit=dev --legacy-peer-deps
 )
 
 winpath() {
@@ -140,13 +165,22 @@ winpath() {
 ARCHIVE_PATH="$OUT_DIR/${BASE_NAME}.zip"
 rm -f "$ARCHIVE_PATH"
 
-if command -v powershell.exe >/dev/null 2>&1; then
-  STAGE_WIN="$(winpath "$STAGE_DIR")"
-  ARCHIVE_WIN="$(winpath "$ARCHIVE_PATH")"
-  powershell.exe -NoProfile -Command "Compress-Archive -Path \"${STAGE_WIN}\\*\" -DestinationPath \"${ARCHIVE_WIN}\" -Force" >/dev/null
+if command -v tar >/dev/null 2>&1; then
+  (
+    cd "$STAGE_DIR"
+    shopt -s dotglob nullglob
+    files=(*)
+    tar -a -cf "$ARCHIVE_PATH" -- "${files[@]}"
+  )
 else
-  echo "powershell.exe is required to create a zip archive on Windows." >&2
-  exit 1
+  if command -v powershell.exe >/dev/null 2>&1; then
+    STAGE_WIN="$(winpath "$STAGE_DIR")"
+    ARCHIVE_WIN="$(winpath "$ARCHIVE_PATH")"
+    powershell.exe -NoProfile -Command "\$ErrorActionPreference = 'Stop'; \$items = Get-ChildItem -Force -LiteralPath \"${STAGE_WIN}\"; Compress-Archive -Path (\$items | ForEach-Object { \$_.FullName }) -DestinationPath \"${ARCHIVE_WIN}\" -Force" >/dev/null
+  else
+    echo "Neither tar nor powershell.exe is available to create a zip archive." >&2
+    exit 1
+  fi
 fi
 
 echo "$ARCHIVE_PATH"
