@@ -145,6 +145,12 @@ fi
   npm install --omit=dev --legacy-peer-deps
 )
 
+if [[ -d "$STAGE_DIR/stubs/baileys" ]]; then
+  mkdir -p "$STAGE_DIR/node_modules/@whiskeysockets"
+  rm -rf "$STAGE_DIR/node_modules/@whiskeysockets/baileys"
+  cp -R -p "$STAGE_DIR/stubs/baileys" "$STAGE_DIR/node_modules/@whiskeysockets/baileys"
+fi
+
 winpath() {
   local p="$1"
   if command -v cygpath >/dev/null 2>&1; then
@@ -162,25 +168,25 @@ winpath() {
   printf '%s\n' "${p//\//\\}"
 }
 
-ARCHIVE_PATH="$OUT_DIR/${BASE_NAME}.zip"
-rm -f "$ARCHIVE_PATH"
+# ARCHIVE_PATH="$OUT_DIR/${BASE_NAME}.zip"
+# rm -f "$ARCHIVE_PATH"
 
-if command -v tar >/dev/null 2>&1; then
-  (
-    cd "$STAGE_DIR"
-    shopt -s dotglob nullglob
-    files=(*)
-    tar -a -cf "$ARCHIVE_PATH" -- "${files[@]}"
-  )
-else
-  if command -v powershell.exe >/dev/null 2>&1; then
-    STAGE_WIN="$(winpath "$STAGE_DIR")"
-    ARCHIVE_WIN="$(winpath "$ARCHIVE_PATH")"
-    powershell.exe -NoProfile -Command "\$ErrorActionPreference = 'Stop'; \$items = Get-ChildItem -Force -LiteralPath \"${STAGE_WIN}\"; Compress-Archive -Path (\$items | ForEach-Object { \$_.FullName }) -DestinationPath \"${ARCHIVE_WIN}\" -Force" >/dev/null
-  else
-    echo "Neither tar nor powershell.exe is available to create a zip archive." >&2
-    exit 1
-  fi
-fi
+# if command -v tar >/dev/null 2>&1; then
+#   (
+#     cd "$STAGE_DIR"
+#     shopt -s dotglob nullglob
+#     files=(*)
+#     tar -a -cf "$ARCHIVE_PATH" -- "${files[@]}"
+#   )
+# else
+#   if command -v powershell.exe >/dev/null 2>&1; then
+#     STAGE_WIN="$(winpath "$STAGE_DIR")"
+#     ARCHIVE_WIN="$(winpath "$ARCHIVE_PATH")"
+#     powershell.exe -NoProfile -Command "\$ErrorActionPreference = 'Stop'; \$items = Get-ChildItem -Force -LiteralPath \"${STAGE_WIN}\"; Compress-Archive -Path (\$items | ForEach-Object { \$_.FullName }) -DestinationPath \"${ARCHIVE_WIN}\" -Force" >/dev/null
+#   else
+#     echo "Neither tar nor powershell.exe is available to create a zip archive." >&2
+#     exit 1
+#   fi
+# fi
 
-echo "$ARCHIVE_PATH"
+# echo "$ARCHIVE_PATH"

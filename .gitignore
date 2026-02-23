@@ -68,8 +68,8 @@ apps/ios/*.mobileprovision
 
 # Local untracked files
 .local/
-IDENTITY.md
-USER.md
+# IDENTITY.md
+# USER.md
 .tgz
 
 # local tooling
@@ -79,3 +79,4 @@ USER.md
 /memory/
 .agent/*.json
 !.agent/workflows/
+.offline-stage/

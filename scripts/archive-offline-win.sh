@@ -3,6 +3,7 @@ set -euo pipefail
 
 STAGE_DIR=""
 OUT_ZIP=""
+USE_7Z="0"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -14,8 +15,12 @@ while [[ $# -gt 0 ]]; do
       OUT_ZIP="$2"
       shift 2
       ;;
+    --prefer-7z)
+      USE_7Z="1"
+      shift 1
+      ;;
     -h|--help)
-      echo "Usage: bash scripts/archive-offline-win.sh --stage-dir <dir> --out <zip>"
+      echo "Usage: bash scripts/archive-offline-win.sh --stage-dir <dir> --out <zip> [--prefer-7z]"
       exit 0
       ;;
     *)
@@ -67,8 +72,14 @@ winpath() {
   printf '%s\n' "${p//\//\\}"
 }
 
-# Prefer PowerShell on Windows to produce Explorer-compatible ZIPs; fallback to tar elsewhere
-if command -v powershell.exe >/dev/null 2>&1; then
+if [[ "$USE_7Z" == "1" ]] && command -v 7z >/dev/null 2>&1; then
+  (
+    cd "$STAGE_DIR"
+    shopt -s dotglob nullglob
+    files=( * )
+    7z a -tzip "$OUT_ZIP" -- "${files[@]}" >/dev/null
+  )
+elif command -v powershell.exe >/dev/null 2>&1; then
   STAGE_WIN="$(winpath "$STAGE_DIR")"
   OUT_WIN="$(winpath "$OUT_ZIP")"
   powershell.exe -NoProfile -Command "\$ErrorActionPreference = 'Stop'; \$items = Get-ChildItem -Force -LiteralPath \"${STAGE_WIN}\"; Compress-Archive -Path (\$items | ForEach-Object { \$_.FullName }) -DestinationPath \"${OUT_WIN}\" -Force" >/dev/null
